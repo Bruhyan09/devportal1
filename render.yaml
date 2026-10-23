@@ -1,0 +1,5 @@
+services:
+  - type: web
+    name: devportal
+    runtime: docker
+    plan: free

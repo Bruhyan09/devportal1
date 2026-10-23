@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login (demo)</title>
+<style>
+  body{font-family:system-ui,sans-serif;background:#1e1e1e;color:#f5f5f5;max-width:380px;margin:2rem auto;padding:0 1rem}
+  form,.box{display:grid;gap:.6rem;background:#2d2d2d;padding:1.2rem;border-radius:10px}
+  input{padding:.6rem;border-radius:8px;border:1px solid #3a3a3a;background:#1e1e1e;color:inherit}
+  button{background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:.6rem;cursor:pointer}
+  button:hover{background:#60a5fa} .link{background:none;color:#60a5fa} #msg{min-height:1.4em;color:#f87171}
+</style></head>
+<body>
+<h1 id="titulo">Entrar</h1>
+<form id="f">
+  <input id="email" type="email" placeholder="E-mail" required autocomplete="username">
+  <input id="senha" type="password" placeholder="Senha (mín. 6 caracteres)" minlength="6" required autocomplete="current-password">
+  <button id="ok">Entrar</button>
+  <button type="button" class="link" id="troca">Não tem conta? Cadastre-se</button>
+  <p id="msg" role="alert"></p>
+</form>
+<div class="box" id="area" hidden><p id="ola"></p><button id="sair">Sair</button></div>
+<script>
+  // DEMO DIDÁTICA: em produção, a autenticação acontece no servidor (PHP + password_hash + sessão).
+  let modo = 'login';
+  const $ = id => document.getElementById(id);
+  const users = () => JSON.parse(localStorage.getItem('users') || '{}');
+  async function hash(txt) {                      // SHA-256 só para a demo (no servidor use password_hash)
+    const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
+    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+  }
+  function tela() {
+    const logado = sessionStorage.getItem('user');
+    $('f').hidden = !!logado; $('area').hidden = !logado; $('titulo').textContent = logado ? 'Painel' : (modo === 'login' ? 'Entrar' : 'Criar conta');
+    if (logado) $('ola').textContent = 'Você está logado como ' + logado;
+    $('ok').textContent = modo === 'login' ? 'Entrar' : 'Cadastrar';
+    $('troca').textContent = modo === 'login' ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Entrar';
+  }
+  $('troca').onclick = () => { modo = modo === 'login' ? 'cadastro' : 'login'; $('msg').textContent = ''; tela(); };
+  $('f').onsubmit = async e => {
+    e.preventDefault(); const em = $('email').value.trim().toLowerCase(), h = await hash($('senha').value), u = users();
+    if (modo === 'cadastro') {
+      if (u[em]) { $('msg').textContent = 'Este e-mail já está cadastrado.'; return; }
+      u[em] = h; localStorage.setItem('users', JSON.stringify(u)); modo = 'login'; $('msg').textContent = ''; alert('Conta criada! Faça login.');
+    } else if (u[em] === h) { sessionStorage.setItem('user', em); $('msg').textContent = ''; }
+    else { $('msg').textContent = 'E-mail ou senha incorretos.'; }
+    tela();
+  };
+  $('sair').onclick = () => { sessionStorage.removeItem('user'); tela(); };
+  tela();
+</script>
+</body></html>
